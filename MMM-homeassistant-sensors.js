@@ -19,7 +19,7 @@ Module.register("MMM-homeassistant-sensors", {
 
   getStyles: function() {
     return [
-      "modules/MMM-homeassistant-sensors/MaterialDesign-Webfont-master/css/materialdesignicons.min.css",
+      "modules/MMM-homeassistant-sensors/node_modules/@mdi/font/css/materialdesignicons.min.css",
       "modules/MMM-homeassistant-sensors/hassio.css"
     ];
   },
@@ -52,22 +52,21 @@ Module.register("MMM-homeassistant-sensors", {
         for (var i = 0; i < values.length; i++) {
           var icons = values[i].icons[0];
           var sensor = values[i].sensor;
+          var type = values[i].type;
           var attributes = values[i].attributes;
           var val = this.getValue(data, sensor, attributes);
           var name = this.getName(data, sensor);
           var unit = this.getUnit(data, sensor);
           var alertThreshold = values[i].alertThreshold;
           if (val) {
-            tableElement.appendChild(
-              this.addValue(name, val, unit, icons, alertThreshold)
-            );
+            tableElement.appendChild(this.addValue(name, type, val, unit, icons, alertThreshold));
           }
         }
       } else {
         for (var key in data) {
           if (data.hasOwnProperty(key)) {
             tableElement.appendChild(
-              this.addValue(key, data[key], "", "", false)
+              this.addValue(key, "", data[key], "", "", false)
             );
           }
         }
@@ -78,20 +77,34 @@ Module.register("MMM-homeassistant-sensors", {
       error.innerHTML = "Error fetching stats.";
       wrapper.appendChild(error);
     }
+
+    //var rows = document.getElementById("tr");
+    //var row = table.getElementById("tr");
+    //for(var row in rows) {
+    //rows.addEventListener("click", function() {
+    //this.sendSocketNotification("Door_Lock", this.config);
+    //});
+    //}
+
+    //var b = document.createElement("button");
+    //b.addEventListener("click", () =>
+    //this.sendSocketNotification("Door_Lock", this.config));
+    //wrapper.appendChild(b);
+
     return wrapper;
   },
-  getValue: function(data, value, attributes=[]) {
+  getValue: function(data, value, attributes = []) {
     for (var i = 0; i < data.length; i++) {
       if (data[i].entity_id == value) {
-        if(attributes.length==0) {
+        if (attributes.length == 0) {
           return data[i].state;
         }
         var returnString = ' | ';
-        for(var j=0; j<attributes.length; j++) {
-          if(attributes[j] == 'state') {
+        for (var j = 0; j < attributes.length; j++) {
+          if (attributes[j] == 'state') {
             returnString += data[i].state + ' | ';
           } else {
-            if(data[i]['attributes'][attributes[j]] !== undefined) {
+            if (data[i]['attributes'][attributes[j]] !== undefined) {
               returnString += data[i]['attributes'][attributes[j]] + ' | ';
             }
           }
@@ -120,7 +133,7 @@ Module.register("MMM-homeassistant-sensors", {
     }
     return null;
   },
-  addValue: function(name, value, unit, icons, alertThreshold) {
+  addValue: function(name, type, value, unit, icons, alertThreshold) {
     var newrow, newText, newCell;
     newrow = document.createElement("tr");
     if (!isNaN(alertThreshold)) {
@@ -162,12 +175,17 @@ Module.register("MMM-homeassistant-sensors", {
           iconsinline = document.createElement("i");
           iconsinline.className = "mdi mdi-" + icons.state_open;
           newCell.appendChild(iconsinline);
-        } else if (
-          value == "closed" &&
-          typeof icons.state_closed === "string"
-        ) {
+        } else if (value == "closed" && typeof icons.state_closed === "string") {
           iconsinline = document.createElement("i");
           iconsinline.className = "mdi mdi-" + icons.state_closed;
+          newCell.appendChild(iconsinline);
+        } else if (value == "locked" && typeof icons.state_locked === "string") {
+          iconsinline = document.createElement("i");
+          iconsinline.className = "mdi mdi-" + icons.state_locked;
+          newCell.appendChild(iconsinline);
+        } else if (value == "unlocked" && typeof icons.state_unlocked === "string") {
+          iconsinline = document.createElement("i");
+          iconsinline.className = "mdi mdi-" + icons.state_unlocked;
           newCell.appendChild(iconsinline);
         } else {
           if (typeof icons.default === "string") {
@@ -192,6 +210,9 @@ Module.register("MMM-homeassistant-sensors", {
     newCell.className = "align-left";
     newText = document.createTextNode(unit);
     newCell.appendChild(newText);
+
+    newrow.addEventListener("click", () =>
+      this.sendSocketNotification(type, this.config));
 
     return newrow;
   },
